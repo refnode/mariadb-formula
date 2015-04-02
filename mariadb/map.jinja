@@ -1,0 +1,60 @@
+{% set mariadb = salt['grains.filter_by']({
+
+    'default': {
+        'formula_supported': False,
+        'manage_firewall': False,
+    },
+    'RedHat': {
+        'formula_supported': True,
+        'manage_firewall': True,
+        'config_common': {
+            'cfg_file': {
+                'name': '/etc/my.cnf',
+                'owner': 'root',
+                'group': 'root',
+                'mode': '0644',
+                'template': 'salt://mariadb/templates/my.cnf.tmpl',
+            },
+            'service': {
+                'port': 3306,
+            },
+        },
+        'server': {
+            'pkg_name': 'mariadb-server',
+            'service_name': 'mariadb',
+            'cfg_file': {
+                'name': '/etc/my.cnf.d/server.cnf',
+                'owner': 'root',
+                'group': 'root',
+                'mode': '0644',
+                'template': 'salt://mariadb/templates/my.cnf.d/server.cnf.tmpl',
+            },
+            'config': {
+                'replication_enable': True,
+                'replication_type': 'master',
+                'server_id': salt['mariadb.server_id'](),
+                'log_bin': 'mariadb-bin',
+                'binlog_format': '',
+                
+                'sync_binlog': True,
+            },
+        },
+        'client': {
+            'pkg_name': 'mariadb',
+            'cfg_file': {
+                'name': '/etc/my.cnf.d/client.cnf',
+                'owner': 'root',
+                'group': 'root',
+                'mode': '0644',
+                'template': 'salt://mariadb/templates/my.cnf.d/client.cnf',
+            },
+        },
+        'libs': {
+            'python': {
+                'pkg_name': 'MySQL-python',
+            },
+        },
+    },
+}, grain='os_family', merge=salt['grains.filter_by']({
+
+}, grain='os', merge=salt['pillar.get']('mariadb:lookup'))) %}
